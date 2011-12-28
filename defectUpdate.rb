@@ -1,8 +1,5 @@
 ########################################################################
-# This example shows how to query revisions on a set of tasks and search for a specific
-# string in the description of the revision. The description is a plain text field and does not 
-# include a back pointer to the Rally artifact. You will need to parse the text for the formatted id of 
-# the object to determine what" was added/removed (e.g. Task added to a Rally story) from the given artifact.
+# Move a csv list of defects from a src project to a dest project
 ########################################################################
 require 'rally_rest_api'
 require 'date'
