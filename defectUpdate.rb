@@ -6,27 +6,34 @@
 ########################################################################
 require 'rally_rest_api'
 require 'date'
+require 'logger'
+
+puts RUBY_VERSION
 
 user_name = ARGV[0]
 password = ARGV[1]
 workspace_name = ARGV[2]
-project_name = ARGV[3]
+src_project_name = ARGV[3]
+dest_project_name = ARGV[4]
 
 base_url = "https://rally1.rallydev.com/slm"
-if ARGV[4] != nil
+if ARGV[5] != nil
   base_url = ARGV[4]
 end
 
 if ( ARGV[0] == nil or ARGV[1] == nil or ARGV[2] == nil or ARGV[3] == nil )
   puts "Usage"
-  puts "ruby query_revisions.rb username password workspace_name project_name"
+  puts "ruby query_revisions.rb username password workspace_name src_project_name dest_project_name"
   puts "Workspace and/or Project names with spaces need to be enclosed by quotes"
   exit
 end
 
+my_logger = Logger.new STDOUT
+
 # Login to the Rally app
 rally = RallyRestAPI.new(:base_url => base_url,
   :username => user_name, :password => password)
+# , :logger => my_logger)
 
 # Find workspace
 workspace = rally.user.subscription.workspaces.find { |w| w.name == workspace_name }
@@ -36,18 +43,31 @@ if workspace == nil
 end
 print "Found Workspace: " + workspace.name + "\n"
 
-# Find project
-project = project = workspace.projects.find { |p| p.name == project_name }
-if project == nil
-  print "Project: " + project_name + " not found\n"
+# Find source project
+src_project = src_project = workspace.projects.find { |p| p.name == src_project_name }
+if src_project == nil
+  print "Src Project: " + src_project_name + " not found\n"
   return
 end
-print "Found Project: " + project.name + "\n"
+print "Found Src Project: " + src_project.name + "\n"
 
-# Find tasks in a specific project in Rally and tasks in a defined state
-defects = rally.find(:defect, :workspace => workspace, :project => project, :fetch => true) {equal :State, "Open"}
+# Find destination project
+dest_project = dest_project = workspace.projects.find { |p| p.name == dest_project_name }
+if dest_project == nil
+  print "Dest Project: " + dest_project_name + " not found\n"
+  return
+end
+print "Found Dest Project: " + dest_project.name + "\n"
+
+# Find defects in a specific project in Rally
+defects = rally.find(:defects, :workspace => workspace, :project => src_project, :fetch => true) {equal :formatted_i_d, "DE3604"}
+
 
 # Iterate through each defect and list the name
 defects.each { |defect|
-    puts "Revision Description: #{defect.name}"
+    puts "Defcet Description: #{defect.name}"
+    puts "Defect Project #{defect.project}"
+    puts "Defect #{defect.formatted_i_d}"
+    defect.update(:project => dest_project)    
+    puts "Defect Project #{defect.project}"
 }
